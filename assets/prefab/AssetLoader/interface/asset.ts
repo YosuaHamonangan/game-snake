@@ -1,49 +1,41 @@
-import { ASSET_EXTENSION, ASSET_TYPE, ASSET_KEY } from "../enum/asset";
+import {
+  ASSET_EXTENSION,
+  ASSET_TYPE,
+  AUDIO_KEY,
+  IMAGE_KEY,
+  SPRITESHEET_KEY,
+} from "../enum/asset";
 
-export interface AssetTypeConfig {
-  /**
-   * Used for spritesheet
-   */
+export interface ImageInfo {
+  key: IMAGE_KEY;
+  type: ASSET_TYPE.IMAGE;
+  url: string;
+  ext?: ASSET_EXTENSION;
+  localUrl?: string;
+}
+
+export interface SpritesheetConfig {
   frameWidth?: number;
-  /**
-   * Used for spritesheet
-   */
   frameHeight?: number;
-  /**
-   * Used for spritesheet
-   */
   paddingX?: number;
-  /**
-   * Used for spritesheet
-   */
   paddingY?: number;
 }
 
-export interface AssetConfig {
-  /**
-   * Asset key used to retrieve loaded assets in game
-   */
-  key: ASSET_KEY;
-  /**
-   * Asset type used for extra handling after it's loaded (if any)
-   */
-  type: ASSET_TYPE;
-  /**
-   * Remote url, suchs as ones from cf.shopee
-   */
+export interface SpritesheetInfo {
+  key: SPRITESHEET_KEY;
+  type: ASSET_TYPE.SPRITESHEET;
   url: string;
-  /**
-   * File extension, only provide if file url does not provide extension
-   *
-   * (e.g. https://cf.shopee.co.id/file/e52dd426de5d3231a7a2dff8cbaaf8ca)
-   */
   ext?: ASSET_EXTENSION;
-  /**
-   * localUrl is only used for loading assets from resources folder
-   */
   localUrl?: string;
-  /**
-   * Optional config used for extra handling after it's loaded (if any)
-   */
-  config?: AssetTypeConfig;
+  config?: SpritesheetConfig;
 }
+
+export interface AudioInfo {
+  key: AUDIO_KEY;
+  type: ASSET_TYPE.AUDIO;
+  url: string;
+  ext?: ASSET_EXTENSION;
+  localUrl?: string;
+}
+
+export type AssetInfo = ImageInfo | SpritesheetInfo | AudioInfo;

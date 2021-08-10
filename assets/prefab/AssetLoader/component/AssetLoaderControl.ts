@@ -1,7 +1,6 @@
 import {
   _decorator,
   Component,
-  Node,
   assetManager,
   resources,
   Asset,
@@ -11,11 +10,10 @@ import {
   Texture2D,
   EventHandler,
 } from "cc";
-
 import { getAssets } from "../config/asset";
-import { ASSET_EXTENSION, ASSET_TYPE } from "../enum/asset";
+import { ASSET_TYPE } from "../enum/asset";
 import { ASSET_LOADER_EVENT } from "../enum/assetEvent";
-import { AssetConfig, AssetTypeConfig } from "../interface/asset";
+import { AssetInfo, SpritesheetInfo } from "../interface/asset";
 import { getAssetId, getSpriteFrameId } from "../util/asset";
 const { ccclass, property } = _decorator;
 
@@ -24,7 +22,7 @@ export class AssetLoaderControl extends Component {
   @property(EventHandler)
   private onComplete: EventHandler[] = [];
 
-  private assetsToLoad: Array<AssetConfig> = getAssets();
+  private assetsToLoad: Array<AssetInfo> = getAssets();
 
   private loadCount = 0;
 
@@ -38,57 +36,51 @@ export class AssetLoaderControl extends Component {
     const { allowLocalAsset } = this;
 
     this.node.emit(ASSET_LOADER_EVENT.START, this.getProgress());
-    this.assetsToLoad.forEach((asset) => {
-      const { key, type, url, ext, localUrl, config } = asset;
+    this.assetsToLoad.forEach((info, i) => {
+      const { key, type, localUrl } = info;
+      const id = getAssetId(type, key);
       if (allowLocalAsset && localUrl) {
-        this.loadLocalAsset(getAssetId(key), type, localUrl, config);
+        this.loadLocalAsset(id, info);
       } else {
-        this.loadRemoteAsset(getAssetId(key), type, url, ext, config);
+        this.loadRemoteAsset(id, info);
       }
     });
   }
 
-  private loadLocalAsset(
-    key: string,
-    type: ASSET_TYPE,
-    url: string,
-    config?: AssetTypeConfig
-  ) {
+  private loadLocalAsset(id: string, info: AssetInfo) {
+    const url = info.localUrl!;
     resources.load(url, (e, data) => {
-      this.handleLoadedAsset(key, type, url, e, data, config);
-
+      this.handleLoadedAsset(id, info, e, data, url);
       if (e) {
-        this.loadLocalAsset(key, type, url, config);
+        console.log(e);
+        // this.loadLocalAsset(key, type, url, config);
       }
     });
   }
 
-  private loadRemoteAsset(
-    key: string,
-    type: ASSET_TYPE,
-    url: string,
-    ext?: ASSET_EXTENSION,
-    config?: AssetTypeConfig
-  ) {
+  private loadRemoteAsset(id: string, info: AssetInfo) {
+    const { url, ext } = info;
+    console.log(url);
+    console.log(ext);
     assetManager.loadRemote(url, { ext }, (e, data) => {
-      this.handleLoadedAsset(key, type, url, e, data, config);
+      this.handleLoadedAsset(id, info, e, data, url);
       if (e) {
-        this.loadRemoteAsset(key, type, url, ext, config);
+        console.log(e);
+        // this.loadRemoteAsset(key, type, url, ext, config);
       }
     });
   }
 
   private handleLoadedAsset(
     id: string,
-    type: ASSET_TYPE,
-    url: string,
+    info: AssetInfo,
     e: Error | null,
     data: Asset,
-    config?: AssetTypeConfig
+    url: string
   ) {
     if (!e) {
       this.loadCount += 1;
-      this.handleLoadedAssetByType(id, data._uuid, type, config);
+      this.handleLoadedAssetByType(id, data._uuid, info);
       this.node.emit(
         ASSET_LOADER_EVENT.ASSET_LOAD_SUCCESS,
         this.getProgress(),
@@ -123,17 +115,12 @@ export class AssetLoaderControl extends Component {
     assetManager.assets.remove(uuid);
   }
 
-  private handleLoadedAssetByType(
-    id: string,
-    uuid: string,
-    type: ASSET_TYPE,
-    config?: AssetTypeConfig
-  ) {
+  private handleLoadedAssetByType(id: string, uuid: string, info: AssetInfo) {
     this.remapAssetManagerEntry(id, uuid);
 
-    switch (type) {
+    switch (info.type) {
       case ASSET_TYPE.SPRITESHEET: {
-        this.handleLoadedSpritesheet(id, config);
+        this.handleLoadedSpritesheet(id, info);
         break;
       }
 
@@ -152,14 +139,15 @@ export class AssetLoaderControl extends Component {
     }
   }
 
-  private handleLoadedSpritesheet(id: string, config?: AssetTypeConfig) {
+  private handleLoadedSpritesheet(id: string, info: SpritesheetInfo) {
     const imageAsset = assetManager.assets.get(id) as ImageAsset;
     const { width, height } = imageAsset || {};
-    const { frameWidth, frameHeight, paddingX, paddingY } = {
-      paddingX: 0,
-      paddingY: 0,
-      ...config,
-    };
+    const {
+      frameWidth,
+      frameHeight,
+      paddingX = 0,
+      paddingY = 0,
+    } = info.config || {};
 
     if (!width || !height || !frameWidth || !frameHeight) return;
 
@@ -173,7 +161,7 @@ export class AssetLoaderControl extends Component {
         spriteFrame.texture = texture;
         spriteFrame.rect = math.rect(col, row, frameWidth, frameHeight);
         assetManager.assets.add(
-          getSpriteFrameId(id, frameIndex++),
+          getSpriteFrameId(info.key, frameIndex++),
           spriteFrame
         );
       }

@@ -34,7 +34,7 @@ export class SnakeControl extends Component {
   }
 
   start() {
-    const fieldControl = this.node.parent?.getComponent(FieldControl);
+    const fieldControl = this.node.parent?.parent?.getComponent(FieldControl);
     if (fieldControl) {
       this.tileSize = fieldControl.TileSize;
     }

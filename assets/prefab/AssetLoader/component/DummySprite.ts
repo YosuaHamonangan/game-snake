@@ -1,23 +1,27 @@
-import { _decorator, Sprite, Node, assetManager, SpriteFrame } from "cc";
-import { ASSET_KEY, ASSET_KEY_PROP } from "../enum/asset";
-import { getAssetId } from "../util/asset";
+import { _decorator, Sprite, assetManager, SpriteFrame } from "cc";
+import { EDITOR } from "cc/env";
+import { IMAGE_KEY, IMAGE_KEY_PROP } from "../enum/asset";
+import { getImageId } from "../util/asset";
 const { ccclass, property } = _decorator;
 
-@ccclass("DummySprite")
+@ccclass("Dummy Sprite")
 export class DummySprite extends Sprite {
-  @property(ASSET_KEY_PROP)
-  assetKey: ASSET_KEY | null = null;
+  @property({ ...IMAGE_KEY_PROP, displayOrder: -500 })
+  private assetKey: IMAGE_KEY = IMAGE_KEY._;
 
   onLoad() {
-    if (this.assetKey !== null) {
-      this.setSpriteFrameByKey(this.assetKey);
-    }
+    this.updateFrame();
   }
 
-  public setSpriteFrameByKey(key: ASSET_KEY) {
-    // @ts-ignore
-    if (!CC_EDITOR) {
-      const id = getAssetId(key);
+  public updateFrame() {
+    if (this.assetKey === IMAGE_KEY._) {
+      this.spriteFrame = null;
+      return;
+    }
+
+    if (EDITOR) {
+    } else {
+      const id = getImageId(this.assetKey);
       const frame = assetManager.assets.get(id) as SpriteFrame;
       this.spriteFrame = frame;
     }

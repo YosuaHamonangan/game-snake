@@ -11,14 +11,25 @@ import {
   SystemEvent,
   macro,
   randomRangeInt,
+  AudioClip,
+  AudioSource,
+  assetManager,
+  sys,
 } from "cc";
 import { FIELD_EVENT, FIELD_STATE } from "../enum/field";
 import { SNAKE_DIRECTION, SNAKE_SECTION_TYPE } from "../enum/snake";
 import { SnakeControl } from "./SnakeControl";
 import levelConfigs from "../config/level";
 import { FieldConfig, LevelConfig, SnakeConfig } from "../interface/config";
+import { AUDIO_KEY, AUDIO_KEY_PROP } from "../../prefab/AssetLoader/enum/asset";
+import { getAudioId } from "../../prefab/AssetLoader/util/asset";
+import { AudioControl } from "./AudioControl";
+import { PanelControl } from "./PanelControl";
+import { PANEL_EVENT } from "../enum/panel";
+import { SCENE_KEY } from "../enum/sceneKey";
+import { DataManagerControl } from "./DataManagerControl";
 
-const { ccclass, property, requireComponent } = _decorator;
+const { ccclass, property } = _decorator;
 
 enum ContentKey {
   snake,
@@ -68,6 +79,24 @@ export class FieldControl extends Component {
   @property(Prefab)
   wallPrefab?: Prefab | null;
 
+  @property(AUDIO_KEY_PROP)
+  private eatKey?: AUDIO_KEY | null;
+  private eatClip?: AudioClip | null;
+
+  @property(AUDIO_KEY_PROP)
+  private crashKey?: AUDIO_KEY | null;
+  private crashClip?: AudioClip | null;
+
+  @property(AUDIO_KEY_PROP)
+  private turnKey?: AUDIO_KEY | null;
+  private turnClip?: AudioClip | null;
+
+  @property(Node)
+  container?: Node | null;
+
+  @property(PanelControl)
+  panel?: PanelControl | null;
+
   private cols = 0;
   get Cols(): number {
     return this.cols;
@@ -87,6 +116,7 @@ export class FieldControl extends Component {
   private nextDir = SNAKE_DIRECTION.UP;
 
   private state = FIELD_STATE.PREPARE;
+  private score = 0;
   private generatedTail = 0;
   // Value of generatedTail when last update move
   private lastUpdateMoveIdx = 0;
@@ -95,8 +125,10 @@ export class FieldControl extends Component {
   private accelerateEvery = 0;
   private acceleration = 0;
 
+  private audioSource?: AudioSource | null;
+
   onLoad() {
-    this.setUpLevel(levelConfigs[2]);
+    this.setUpLevel();
     this.setEventHandler();
   }
 
@@ -133,12 +165,24 @@ export class FieldControl extends Component {
         this.setState(FIELD_STATE.PLAY);
       }
     });
+
+    this.panel?.node.on(PANEL_EVENT.PLAY_AGAIN, () => {
+      this.setUpLevel();
+      this.waitForPlayer();
+      this.panel?.hide();
+    });
   }
 
-  private setUpLevel(config: LevelConfig) {
+  private setUpLevel() {
+    const idx = randomRangeInt(0, 3);
+    const config = levelConfigs[idx];
     const { fieldConfig, snakeConfig } = config;
+
+    this.setScore(0);
+
     this.setUpField(fieldConfig);
     this.setUpSnake(snakeConfig);
+    this.setUpAudio();
   }
 
   private setUpField(config: FieldConfig) {
@@ -146,7 +190,12 @@ export class FieldControl extends Component {
     this.cols = config.tiles[0].length;
     const bgUITransform = this.bgNode?.getComponent(UITransform);
     if (bgUITransform) {
-      this.tileSize = bgUITransform.contentSize.x / this.cols;
+      this.tileSize =
+        (bgUITransform.contentSize.x / this.cols) * bgUITransform.node.scale.x;
+    }
+
+    if (this.container) {
+      this.container.children.forEach((child) => child.destroy());
     }
 
     this.tiles = new Array(this.rows);
@@ -173,6 +222,7 @@ export class FieldControl extends Component {
       throw new Error("Snake parts can't be less than 3");
     }
 
+    this.snakeSections = [];
     parts.forEach((part) => {
       this.createSnakeSection(
         part.x,
@@ -199,6 +249,25 @@ export class FieldControl extends Component {
     tail.type = SNAKE_SECTION_TYPE.TAIL;
 
     this.updateSectionNode();
+  }
+
+  setUpAudio() {
+    this.audioSource = AudioControl.Instance.audioSource;
+
+    if (this.eatKey) {
+      const id = getAudioId(this.eatKey);
+      this.eatClip = assetManager.assets.get(id) as AudioClip;
+    }
+
+    if (this.crashKey) {
+      const id = getAudioId(this.crashKey);
+      this.crashClip = assetManager.assets.get(id) as AudioClip;
+    }
+
+    if (this.turnKey) {
+      const id = getAudioId(this.turnKey);
+      this.turnClip = assetManager.assets.get(id) as AudioClip;
+    }
   }
 
   private getPairsDir(
@@ -284,7 +353,7 @@ export class FieldControl extends Component {
     const tile = new Vec2(col, row);
     const pos = this.getTilePos(tile);
     const node = instantiate(this.wallPrefab!);
-    node.parent = this.node;
+    node.parent = this.container!;
     node.setPosition(pos);
 
     const content: WallInfo = { key: ContentKey.wall, tile, pos, node };
@@ -296,7 +365,7 @@ export class FieldControl extends Component {
     const tile = new Vec2(col, row);
     const pos = this.getTilePos(tile);
     const node = instantiate(this.foodPrefab!);
-    node.parent = this.node;
+    node.parent = this.container!;
     node.setPosition(pos);
 
     const content: FoodInfo = { key: ContentKey.food, tile, pos, node };
@@ -313,7 +382,7 @@ export class FieldControl extends Component {
     const tile = new Vec2(col, row);
     const pos = this.getTilePos(tile);
     const node = instantiate(this.snakePrefab!);
-    node.parent = this.node;
+    node.parent = this.container!;
     node.setPosition(pos);
 
     const control = node.getComponent(SnakeControl)!;
@@ -384,6 +453,9 @@ export class FieldControl extends Component {
         break;
     }
 
+    if (this.nextDir !== dir) {
+      this.playTurnSfx();
+    }
     this.nextDir = dir;
     return true;
   }
@@ -454,14 +526,17 @@ export class FieldControl extends Component {
       this.setTileContent(prvSection.tile, null);
     }
 
-    if (this.checkLose()) return this.gameOver();
+    if (this.checkLose()) {
+      this.playCrashSfx();
+      return this.gameOver();
+    }
 
     // Check for food
     const collidedContent = this.getTileContent(head.tile);
     if (collidedContent?.key === ContentKey.food) {
       collidedContent.node.destroy();
       head.hasFood = true;
-      this.spawnFood();
+      this.onEatFood();
     }
 
     this.updateMoveInterval();
@@ -517,9 +592,48 @@ export class FieldControl extends Component {
     return false;
   }
 
+  onEatFood() {
+    this.setScore(this.score + 1);
+    this.playEatSfx();
+    this.spawnFood();
+  }
+
+  setScore(val: number) {
+    this.score = val;
+
+    if (DataManagerControl.Instance) {
+      DataManagerControl.Instance.score = val;
+    }
+
+    this.node.emit(FIELD_EVENT.SCORE_UPDATE, val);
+  }
+
   private gameOver() {
     this.setState(FIELD_STATE.GAME_OVER);
     this.unschedule(this.move);
-    console.log("this.gameOver");
+
+    if (DataManagerControl.Instance) {
+      DataManagerControl.Instance.setHighScore(this.score);
+    }
+
+    this.panel?.show();
+  }
+
+  private playCrashSfx() {
+    if (this.audioSource && this.crashClip) {
+      this.audioSource.playOneShot(this.crashClip);
+    }
+  }
+
+  private playEatSfx() {
+    if (this.audioSource && this.eatClip) {
+      this.audioSource.playOneShot(this.eatClip);
+    }
+  }
+
+  private playTurnSfx() {
+    if (this.audioSource && this.turnClip) {
+      this.audioSource.playOneShot(this.turnClip);
+    }
   }
 }

@@ -1,37 +1,36 @@
-import { _decorator, Sprite, Node, assetManager, SpriteFrame } from "cc";
-import { ASSET_KEY, ASSET_KEY_PROP } from "../enum/asset";
-import { getAssetId, getSpriteFrameId } from "../util/asset";
+import { _decorator, Sprite, assetManager, SpriteFrame } from "cc";
+import { EDITOR } from "cc/env";
+import { SPRITESHEET_KEY_PROP, SPRITESHEET_KEY } from "../enum/asset";
+import { getSpriteFrameId } from "../util/asset";
 const { ccclass, property } = _decorator;
 
 @ccclass("Dummy Sprite Sheet")
 export class DummySpriteSheet extends Sprite {
-  @property(ASSET_KEY_PROP)
-  assetKey: ASSET_KEY | null = null;
+  @property({ ...SPRITESHEET_KEY_PROP, displayOrder: -501 })
+  private assetKey: SPRITESHEET_KEY = SPRITESHEET_KEY._;
 
-  @property({ step: 1, min: 0 })
+  @property({ step: 1, min: 0, displayOrder: -500 })
   frameKey = 0;
 
   onLoad() {
-    if (this.assetKey !== null) {
-      this.setSpriteFrameByKey(this.assetKey, this.frameKey);
-    }
+    this.updateFrame();
   }
 
-  public setSpriteFrameByKey(key: ASSET_KEY, frameKey: number) {
-    this.assetKey = key;
-    this.frameKey = frameKey;
-    // @ts-ignore
-    if (!CC_EDITOR) {
-      const assetId = getAssetId(key);
-      const id = getSpriteFrameId(assetId, frameKey);
+  private updateFrame() {
+    if (this.assetKey === SPRITESHEET_KEY._) {
+      this.spriteFrame = null;
+      return;
+    }
+
+    if (!EDITOR) {
+      const id = getSpriteFrameId(this.assetKey, this.frameKey);
       const frame = assetManager.assets.get(id) as SpriteFrame;
       this.spriteFrame = frame;
     }
   }
 
   public setToFrame(frameKey: number) {
-    if (this.assetKey !== null) {
-      this.setSpriteFrameByKey(this.assetKey, frameKey);
-    }
+    this.frameKey = frameKey;
+    this.updateFrame();
   }
 }

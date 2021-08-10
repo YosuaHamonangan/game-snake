@@ -1,5 +1,5 @@
 import { _decorator, Component, Node, director } from "cc";
-import { ASSET_LOADER_EVENT } from "../../prefab/AssetLoader/enum/assetEvent";
+import { ASSET_LOADER_EVENT } from "../enum/assetEvent";
 import { SCENE_KEY } from "../enum/sceneKey";
 const { ccclass, property } = _decorator;
 

@@ -14,19 +14,17 @@ import {
   AudioClip,
   AudioSource,
   assetManager,
-  sys,
 } from "cc";
 import { FIELD_EVENT, FIELD_STATE } from "../enum/field";
 import { SNAKE_DIRECTION, SNAKE_SECTION_TYPE } from "../enum/snake";
 import { SnakeControl } from "./SnakeControl";
 import levelConfigs from "../config/level";
 import { FieldConfig, LevelConfig, SnakeConfig } from "../interface/config";
-import { AUDIO_KEY, AUDIO_KEY_PROP } from "../../prefab/AssetLoader/enum/asset";
-import { getAudioId } from "../../prefab/AssetLoader/util/asset";
+import { AUDIO_KEY, AUDIO_KEY_PROP } from "../enum/asset";
+import { getAudioId } from "../util/asset";
 import { AudioControl } from "./AudioControl";
 import { PanelControl } from "./PanelControl";
 import { PANEL_EVENT } from "../enum/panel";
-import { SCENE_KEY } from "../enum/sceneKey";
 import { DataManagerControl } from "./DataManagerControl";
 
 const { ccclass, property } = _decorator;
@@ -175,7 +173,7 @@ export class FieldControl extends Component {
 
   private setUpLevel() {
     const idx = randomRangeInt(0, 3);
-    const config = levelConfigs[idx];
+    const config: LevelConfig = levelConfigs[idx];
     const { fieldConfig, snakeConfig } = config;
 
     this.setScore(0);

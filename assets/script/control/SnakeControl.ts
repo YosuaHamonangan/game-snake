@@ -1,5 +1,5 @@
 import { _decorator, Component, Node, UITransform, Vec3 } from "cc";
-import { DummySpriteSheet } from "../../prefab/AssetLoader/component/DummySpritSheet";
+import { DummySpriteSheet } from "../component/DummySpritSheet";
 import {
   SNAKE_DIRECTION,
   SNAKE_SECTION_FRAME,

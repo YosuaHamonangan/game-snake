@@ -1,5 +1,5 @@
 import { _decorator, Component, Node, UITransform, Sprite } from "cc";
-import { DummySprite } from "../../prefab/AssetLoader/component/DummySprite";
+import { DummySprite } from "../component/DummySprite";
 import { FieldControl } from "./FieldControl";
 const { ccclass, property } = _decorator;
 

@@ -1,9 +1,9 @@
 import { _decorator, Component, Node, RichText } from "cc";
-import { ASSET_LOADER_EVENT } from "../AssetLoader/enum/assetEvent";
+import { ASSET_LOADER_EVENT } from "../enum/assetEvent";
 const { ccclass, property } = _decorator;
 
-@ccclass("AssetLoaderUI")
-export class AssetLoaderUI extends Component {
+@ccclass("AssetLoaderUIControl")
+export class AssetLoaderUIControl extends Component {
   @property(Node)
   private assetLoader?: Node;
 

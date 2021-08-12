@@ -15,7 +15,6 @@ export class DummySprite extends Sprite {
 
   public updateFrame() {
     if (this.assetKey === IMAGE_KEY._) {
-      this.spriteFrame = null;
       return;
     }
 

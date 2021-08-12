@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, RichText } from "cc";
+import { _decorator, Component, Node, Label, ProgressBar } from "cc";
 import { ASSET_LOADER_EVENT } from "../enum/assetEvent";
 const { ccclass, property } = _decorator;
 
@@ -7,11 +7,14 @@ export class AssetLoaderUIControl extends Component {
   @property(Node)
   private assetLoader?: Node;
 
-  @property(RichText)
-  private progressText?: RichText;
+  @property(ProgressBar)
+  private progressBar?: ProgressBar;
 
-  @property(RichText)
-  private labelText?: RichText;
+  @property(Label)
+  private progressText?: Label;
+
+  @property(Label)
+  private labelText?: Label;
 
   start() {
     if (!this.assetLoader) {
@@ -35,8 +38,12 @@ export class AssetLoaderUIControl extends Component {
   }
 
   public updateText(progress: number, key?: string) {
-    const { progressText, labelText } = this;
+    const { progressText, labelText, progressBar } = this;
     const progressPercent = Math.floor(progress * 100);
+
+    if (progressBar) {
+      progressBar.progress = progress;
+    }
 
     if (progressText) {
       progressText.string = `${progressPercent}%`;

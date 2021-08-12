@@ -16,7 +16,6 @@ export class DummyAudio extends AudioSource {
 
   public updateClip() {
     if (this.assetKey === AUDIO_KEY._) {
-      this.clip = null;
       return;
     }
 

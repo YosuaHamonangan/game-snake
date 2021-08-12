@@ -18,7 +18,6 @@ export class DummySpriteSheet extends Sprite {
 
   private updateFrame() {
     if (this.assetKey === SPRITESHEET_KEY._) {
-      this.spriteFrame = null;
       return;
     }
 

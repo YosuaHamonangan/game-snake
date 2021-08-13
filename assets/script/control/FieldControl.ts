@@ -128,10 +128,10 @@ export class FieldControl extends Component {
   onLoad() {
     this.setUpLevel();
     this.setEventHandler();
+    this.setUpAudio();
   }
 
   start() {
-    this.spawnFood();
     this.waitForPlayer();
   }
 
@@ -180,7 +180,7 @@ export class FieldControl extends Component {
 
     this.setUpField(fieldConfig);
     this.setUpSnake(snakeConfig);
-    this.setUpAudio();
+    this.spawnFood();
   }
 
   private setUpField(config: FieldConfig) {

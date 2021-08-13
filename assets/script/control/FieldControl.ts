@@ -564,7 +564,7 @@ export class FieldControl extends Component {
       this.lastUpdateMoveIdx = this.generatedTail;
       this.moveInterval = Math.max(
         this.minMoveInterval,
-        this.moveInterval / this.acceleration
+        this.moveInterval * this.acceleration
       );
       this.scheduleMove();
     }

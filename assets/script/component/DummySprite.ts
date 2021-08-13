@@ -1,6 +1,8 @@
-import { _decorator, Sprite, assetManager, SpriteFrame } from "cc";
+import { _decorator, Sprite, assetManager, SpriteFrame, CCBoolean } from "cc";
 import { EDITOR } from "cc/env";
+import { AssetLoaderControl } from "../control/AssetLoaderControl";
 import { IMAGE_KEY, IMAGE_KEY_PROP } from "../enum/asset";
+import { ASSET_LOADER_EVENT } from "../enum/assetEvent";
 import { getImageId } from "../util/asset";
 const { ccclass, property } = _decorator;
 
@@ -9,8 +11,15 @@ export class DummySprite extends Sprite {
   @property({ ...IMAGE_KEY_PROP, displayOrder: -500 })
   private assetKey: IMAGE_KEY = IMAGE_KEY._;
 
+  @property({ type: CCBoolean, displayOrder: -499 })
+  private waitAsset = false;
+
   onLoad() {
-    this.updateFrame();
+    if (this.waitAsset) {
+      this.waitForAsset();
+    } else {
+      this.updateFrame();
+    }
   }
 
   public updateFrame() {
@@ -23,6 +32,20 @@ export class DummySprite extends Sprite {
       const id = getImageId(this.assetKey);
       const frame = assetManager.assets.get(id) as SpriteFrame;
       this.spriteFrame = frame;
+    }
+  }
+
+  private waitForAsset() {
+    if (AssetLoaderControl.Instance) {
+      AssetLoaderControl.Instance.node.on(
+        ASSET_LOADER_EVENT.ASSET_LOAD_SUCCESS,
+        (progress: number, loadedId: string) => {
+          const id = getImageId(this.assetKey);
+          if (id === loadedId) {
+            this.updateFrame();
+          }
+        }
+      );
     }
   }
 }

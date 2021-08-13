@@ -17,6 +17,13 @@ export function getAssets(): AssetInfo[] {
   assets = [];
 
   assets.push({
+    key: IMAGE_KEY.LOGO_SHOPEE_ULAR,
+    type: ASSET_TYPE.IMAGE,
+    url: "",
+    localUrl: "image/logo-shopee-ular",
+  });
+
+  assets.push({
     key: SPRITESHEET_KEY.SNAKE,
     type: ASSET_TYPE.SPRITESHEET,
     url: "",
@@ -74,13 +81,6 @@ export function getAssets(): AssetInfo[] {
     type: ASSET_TYPE.IMAGE,
     url: "",
     localUrl: "image/arrow-right",
-  });
-
-  assets.push({
-    key: IMAGE_KEY.LOGO_SHOPEE_ULAR,
-    type: ASSET_TYPE.IMAGE,
-    url: "",
-    localUrl: "image/logo-shopee-ular",
   });
 
   assets.push({

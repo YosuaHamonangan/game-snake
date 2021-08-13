@@ -19,6 +19,8 @@ const { ccclass, property } = _decorator;
 
 @ccclass("AssetLoaderControl")
 export class AssetLoaderControl extends Component {
+  static Instance: AssetLoaderControl;
+
   @property(EventHandler)
   private onComplete: EventHandler[] = [];
 
@@ -28,7 +30,13 @@ export class AssetLoaderControl extends Component {
 
   private allowLocalAsset = true;
 
-  start() {
+  onLoad() {
+    if (AssetLoaderControl.Instance) {
+      throw new Error("Multiple AssetLoaderControl");
+    } else {
+      AssetLoaderControl.Instance = this;
+    }
+
     this.startAssetsLoad();
   }
 
@@ -60,8 +68,6 @@ export class AssetLoaderControl extends Component {
 
   private loadRemoteAsset(id: string, info: AssetInfo) {
     const { url, ext } = info;
-    console.log(url);
-    console.log(ext);
     assetManager.loadRemote(url, { ext }, (e, data) => {
       this.handleLoadedAsset(id, info, e, data, url);
       if (e) {
